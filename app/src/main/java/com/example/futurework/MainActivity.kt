@@ -1,80 +1,125 @@
 package com.example.futurework
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.example.futurework.ui.theme.FutureWorkTheme
+import androidx.compose.ui.platform.LocalContext
+import com.example.futurework.ui.theme.SearchForMovies
+
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-             mainScreen()
+             MainScreen()
 
         }
     }
 }
 
 @Composable
-fun mainScreen() {
-
+fun MainScreen() {
     val configuration = LocalConfiguration.current
+    //val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
     val isPortrait = configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
 
     Box(
         modifier = Modifier
-            .fillMaxHeight()
-            .fillMaxWidth()
-            .background(Color(0xFFFFC677))
+            .fillMaxSize()
+            .background(Color(0xFFD9D9D9))
             .padding(16.dp)
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(50.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp, alignment = Alignment.Bottom),
-            horizontalAlignment = Alignment.CenterHorizontally,
+        if (isPortrait) {
+            // Portrait Layout
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(50.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp, alignment = Alignment.Bottom),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.multimedia_logo_design___vijay_k_removebg_preview),
+                    contentDescription = "Logo",
+                    modifier = Modifier
+                        .size(300.dp)
+                        .absoluteOffset(x = 0.dp, y = 0.dp)
+                )
 
-        ) {
-            CustomButton("Add Movies to DB")
-            CustomButton("Search for Movies")
-            CustomButton("Search for Actors")
-            Spacer(modifier = Modifier.height(100.dp))
+                CustomButton("Add Movies to DB", SearchForMovies::class.java)
+                CustomButton("Search for Movies", SearchForMovies::class.java)
+                CustomButton("Search for Actors", SearchForMovies::class.java)
+
+                Spacer(modifier = Modifier.height(100.dp))
+            }
+        } else {
+            // Landscape Layout
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(50.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.multimedia_logo_design___vijay_k_removebg_preview),
+                    contentDescription = "Logo",
+                    modifier = Modifier.size(250.dp)
+                )
+
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    CustomButton("Add Movies to DB", SearchForMovies::class.java)
+                    CustomButton("Search for Movies", SearchForMovies::class.java)
+                    CustomButton("Search for Actors", SearchForMovies::class.java)
+                }
+            }
         }
     }
 }
 
 
 
+
 @Composable
-fun CustomButton(buttonText: String) {
+fun CustomButton(buttonText: String, targetActivity: Class<*>) {
+    val  context = LocalContext.current
     Button(
-        onClick = { /* Handle click */ },
+        onClick = { val intent = Intent(context, targetActivity)
+                    context.startActivity(intent) },
         colors = ButtonDefaults.buttonColors(
-            containerColor = Color(0xFFA2A2A2),
-            contentColor = Color.White
+            containerColor = Color(0xFFB2BDE2),
+            contentColor = Color.Black
         ),
         modifier = Modifier
             .fillMaxWidth()              // makes the button take full horizontal space
