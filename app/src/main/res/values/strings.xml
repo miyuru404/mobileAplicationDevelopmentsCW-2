@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">futureWork</string>
     <string name="title_activity_search_for_movies">SearchForMovies</string>
+    <string name="title_activity_search_for_actor">SearchForActor</string>
 </resources>
