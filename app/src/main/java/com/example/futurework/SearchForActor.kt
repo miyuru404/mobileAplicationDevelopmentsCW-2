@@ -161,16 +161,19 @@ fun DisplayAllMovies(movies: List<Movie>) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState()) // Important: make it scrollable
+            .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
+        // Loop through each movie in the list and call DisplayMovieData
         movies.forEach { movie ->
-            DisplayMovieData(movie)
+            // Call DisplayMovieData to show details for each movie
+            DisplayMovieData(movies) // Pass a list containing the single movie
             HorizontalDivider(thickness = 1.dp, color = Color.Gray)
             Spacer(modifier = Modifier.height(10.dp))
         }
     }
 }
+
 
 
 

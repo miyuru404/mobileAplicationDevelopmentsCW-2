@@ -68,7 +68,8 @@ class SearchForMovies : ComponentActivity() {
 fun SecondScreen() {
 
     var movieTitle by rememberSaveable { mutableStateOf("") }
-    var retrievedMovie by remember { mutableStateOf<Movie?>(null) }
+    //var retrievedMovie by remember { mutableStateOf<Movie?>(null) }
+    var retrievedMovie by rememberSaveable { mutableStateOf<List<Movie>>(emptyList()) }
 
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
@@ -128,16 +129,14 @@ fun TextBox(movieTitle: String, onTextChange: (String) -> Unit) {
 }
 
 @Composable
-fun RetrieveMovie(movieTitle: String,  onMovieFetched: (Movie?) -> Unit) {
-
+fun RetrieveMovie(movieTitle: String, onMovieFetched: (List<Movie>) -> Unit) {
     val coroutineScope = rememberCoroutineScope()
 
     Button(
         onClick = {
-
             coroutineScope.launch {
-                val movie = fetchMovieData(movieTitle)
-                onMovieFetched(movie)
+                val movies = fetchMovieData(movieTitle)
+                onMovieFetched(movies)
             }
         },
         colors = ButtonDefaults.buttonColors(
@@ -145,17 +144,17 @@ fun RetrieveMovie(movieTitle: String,  onMovieFetched: (Movie?) -> Unit) {
             contentColor = Color.Black
         ),
         modifier = Modifier
-            .fillMaxWidth() // makes the button take full horizontal space
-            .height(60.dp), // makes the button taller
+            .fillMaxWidth()
+            .height(60.dp),
         elevation = ButtonDefaults.buttonElevation(
-            defaultElevation = 20.dp, // creates the shadow
-            pressedElevation = 12.dp // deeper shadow when pressed
+            defaultElevation = 20.dp,
+            pressedElevation = 12.dp
         ),
         border = BorderStroke(1.dp, Color.Black)
     ) {
         Row(modifier = Modifier.fillMaxWidth()) {
             Text("Retrieve Movie")
-            Spacer(modifier = Modifier.weight(1f)) // Pushes icon to the end
+            Spacer(modifier = Modifier.weight(1f))
             Icon(
                 imageVector = Icons.Default.ArrowDropDown,
                 contentDescription = "retrieve"
@@ -166,13 +165,26 @@ fun RetrieveMovie(movieTitle: String,  onMovieFetched: (Movie?) -> Unit) {
     Spacer(modifier = Modifier.height(20.dp))
 }
 
+
+
+
 @Composable
-fun SaveMovie(movie: Movie?) {
+fun SaveMovie(movieList: List<Movie>) {
     val context = LocalContext.current
 
     Button(
         onClick = {
-            insertMovie(context, movie)
+            if (movieList.isEmpty()) {
+                Toast.makeText(context, "No movie to save!", Toast.LENGTH_SHORT).show()
+            } else {
+                CoroutineScope(Dispatchers.IO).launch {
+                    val db = MovieDatabase.getInstance(context)
+                    movieList.forEach { db.movieDao().insertMovie(it) }
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, "Movies saved to DB!", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
         },
         colors = ButtonDefaults.buttonColors(
             containerColor = Color(0xFFB2BDE2),
@@ -199,7 +211,8 @@ fun SaveMovie(movie: Movie?) {
 }
 
 
-suspend fun fetchMovieData(title: String): Movie? {
+
+suspend fun fetchMovieData(title: String): List<Movie> {
     return withContext(Dispatchers.IO) {
         try {
             val encodedTitle = URLEncoder.encode(title, "UTF-8")
@@ -214,27 +227,30 @@ suspend fun fetchMovieData(title: String): Movie? {
             val json = JSONObject(result)
 
             if (json.getString("Response") == "True") {
-                Movie(
-                    title = json.getString("Title"),
-                    year = json.getString("Year"),
-                    rated = json.getString("Rated"),
-                    released = json.getString("Released"),
-                    runtime = json.getString("Runtime"),
-                    genre = json.getString("Genre"),
-                    director = json.getString("Director"),
-                    writer = json.getString("Writer"),
-                    actors = json.getString("Actors"),
-                    plot = json.getString("Plot")
+                listOf(
+                    Movie(
+                        title = json.getString("Title"),
+                        year = json.getString("Year"),
+                        rated = json.getString("Rated"),
+                        released = json.getString("Released"),
+                        runtime = json.getString("Runtime"),
+                        genre = json.getString("Genre"),
+                        director = json.getString("Director"),
+                        writer = json.getString("Writer"),
+                        actors = json.getString("Actors"),
+                        plot = json.getString("Plot")
+                    )
                 )
             } else {
-                null
+                emptyList()
             }
         } catch (e: Exception) {
-            Log.e("MovieFetch", "Error:")
-            null
+            Log.e("MovieFetch", "Error fetching data", e)
+            emptyList()
         }
     }
 }
+
 
 
 
@@ -253,20 +269,25 @@ fun insertMovie(context: Context, movie: Movie?) {
     }
 }
 @Composable
-fun DisplayMovieData(movie: Movie) {
+fun DisplayMovieData(movie: List<Movie>) {
     Column {
-        Text(text = "Title: ${movie.title}")
-        Text(text = "Year: ${movie.year}")
-        Text(text = "Rated: ${movie.rated}")
-        Text(text = "Released: ${movie.released}")
-        Text(text = "Runtime: ${movie.runtime}")
-        Text(text = "Genre: ${movie.genre}")
-        Text(text = "Director: ${movie.director}")
-        Text(text = "Writer: ${movie.writer}")
-        Text(text = "Actors: ${movie.actors}")
-        Text(text = "Plot: ${movie.plot}")
+        movie.forEach {
+            Text(text = "Title: ${it.title}")
+            Text(text = "Year: ${it.year}")
+            Text(text = "Rated: ${it.rated}")
+            Text(text = "Released: ${it.released}")
+            Text(text = "Runtime: ${it.runtime}")
+            Text(text = "Genre: ${it.genre}")
+            Text(text = "Director: ${it.director}")
+            Text(text = "Writer: ${it.writer}")
+            Text(text = "Actors: ${it.actors}")
+            Text(text = "Plot: ${it.plot}")
+            Spacer(modifier = Modifier.height(16.dp)) // Space between movies
+        }
     }
 }
+
+
 
 
 
