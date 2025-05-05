@@ -1,6 +1,10 @@
 package com.example.futurework
 
+import android.app.Activity
+import android.content.Context
 import android.os.Bundle
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -31,7 +35,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.room.Room
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
+import java.net.URLEncoder
 
 class SearchForMovies : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,8 +57,12 @@ class SearchForMovies : ComponentActivity() {
     }
 }
 
+
 @Composable
 fun SecondScreen() {
+    val context = LocalContext.current
+    var movieTitle by remember { mutableStateOf("") }
+    var retrievedMovie by remember { mutableStateOf<Movie?>(null) }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -52,23 +70,28 @@ fun SecondScreen() {
             .padding(16.dp)
     ){
         Column {
-            TextBox()
+            TextBox(movieTitle) { movieTitle = it }
+
             Spacer(modifier = Modifier.height(10.dp))
-            RetrieveMovie()
+            RetrieveMovie(movieTitle, context) { retrievedMovie = it }
             Spacer(modifier = Modifier.height(10.dp))
-            SaveMovie()
+            SaveMovie(retrievedMovie)
+            if (retrievedMovie != null) {
+                DisplayMovieData(movie = retrievedMovie!!)
+            }
+
+
         }
     }
 
 }
 
 @Composable
-fun TextBox() {
-    var text by remember { mutableStateOf("") }
+fun TextBox(movieTitle: String, onTextChange: (String) -> Unit) {
 
     OutlinedTextField(
-        value = text,
-        onValueChange = { text = it },
+        value = movieTitle,
+        onValueChange = onTextChange,
         label = { Text("Enter your name") },
         modifier = Modifier
             .fillMaxWidth()
@@ -77,10 +100,15 @@ fun TextBox() {
 }
 
 @Composable
-fun SaveMovie() {
+fun RetrieveMovie(movieTitle: String, context: Context, onMovieFetched: (Movie?) -> Unit) {
+
+
 
     Button(
-        onClick = {  },
+        onClick = {
+            fetchMovieData(context, movieTitle) { onMovieFetched(it) }
+
+        },
         colors = ButtonDefaults.buttonColors(
             containerColor = Color(0xFFB2BDE2),
             contentColor = Color.Black
@@ -93,8 +121,44 @@ fun SaveMovie() {
             pressedElevation = 12.dp     // deeper shadow when pressed
         ),
         border = BorderStroke(1.dp, Color.Black)
-    ) {
 
+    ) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Text("Retrieve Movie")
+            Spacer(modifier = Modifier.weight(1f)) // Pushes icon to the end
+            Icon(
+                imageVector = Icons.Default.ArrowDropDown,
+                contentDescription = "retrieve"
+            )
+        }
+
+    }
+    Spacer(modifier = Modifier.height(20.dp))
+
+
+}
+
+@Composable
+fun SaveMovie(movie: Movie?) {
+    val context = LocalContext.current
+
+    Button(
+        onClick = {
+            insertMovie(context, movie)
+        },
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color(0xFFB2BDE2),
+            contentColor = Color.Black
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(60.dp),
+        elevation = ButtonDefaults.buttonElevation(
+            defaultElevation = 20.dp,
+            pressedElevation = 12.dp
+        ),
+        border = BorderStroke(1.dp, Color.Black)
+    ) {
         Row(modifier = Modifier.fillMaxWidth()) {
             Text("Save movie to Database")
             Spacer(modifier = Modifier.weight(1f))
@@ -105,74 +169,97 @@ fun SaveMovie() {
         }
     }
 }
-@Composable
-fun RetrieveMovie() {
-    var movie by remember { mutableStateOf<Movie?>(null) }
 
 
-        Button(
-            onClick = {
-                // Simulated JSON string (not real parsing)
-                val json = """
-                {
-                    "title": "Inception",
-                    "director": "Christopher Nolan",
-                    "year": "2010",
-                    "genre": "Sci-Fi"
-                }
-            """.trimIndent()
+fun fetchMovieData(context: Context, title: String, onResult: (Movie?) -> Unit) {
+    Thread {
+        try {
+            val apiKey = "c582a2b0" //
+            //val url = URL("https://www.omdbapi.com/?t=${title}&apikey=$apiKey")
+            val encodedTitle = URLEncoder.encode(title, "UTF-8")
+            val url = URL("https://www.omdbapi.com/?t=$encodedTitle&apikey=$apiKey")
 
-                // Manually extract values from the string
-                val title = getValue(json, "title")
-                val director = getValue(json, "director")
-                val year = getValue(json, "year")
-                val genre = getValue(json, "genre")
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
 
-                movie = Movie(title, director, year, genre)
-            },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFB2BDE2),
-                contentColor = Color.Black
-            ),
-            modifier = Modifier
-                .fillMaxWidth()              // makes the button take full horizontal space
-                .height(60.dp),              // makes the button taller
-            elevation = ButtonDefaults.buttonElevation(
-                defaultElevation = 20.dp,     // creates the shadow
-                pressedElevation = 12.dp     // deeper shadow when pressed
-            ),
-            border = BorderStroke(1.dp, Color.Black)
+            val result = connection.inputStream.bufferedReader().readText()
+            connection.disconnect()
 
-        ) {
-            Row(modifier = Modifier.fillMaxWidth()) {
-                Text("Retrieve Movie")
-                Spacer(modifier = Modifier.weight(1f)) // Pushes icon to the end
-                Icon(
-                    imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = "retrieve"
+            val json = JSONObject(result)
+            if (json.getString("Response") == "True") {
+                val movie = Movie(
+                    title = json.getString("Title"),
+                    year = json.getString("Year"),
+                    rated = json.getString("Rated"),
+                    released = json.getString("Released"),
+                    runtime = json.getString("Runtime"),
+                    genre = json.getString("Genre"),
+                    director = json.getString("Director"),
+                    writer = json.getString("Writer"),
+                    actors = json.getString("Actors"),
+                    plot = json.getString("Plot")
                 )
+                // On success, pass the movie data to the UI thread
+                (context as Activity).runOnUiThread {
+                    onResult(movie)
+
+                }
+            } else {
+                // On failure, show "No movies found" in Toast
+                (context as Activity).runOnUiThread {
+                    Toast.makeText(context, "No movies found", Toast.LENGTH_SHORT).show()
+                }
             }
-
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // In case of any error, show "No movies found" in Toast
+            (context as Activity).runOnUiThread {
+                Toast.makeText(context, "No movies found", Toast.LENGTH_SHORT).show()
+            }
         }
-        Spacer(modifier = Modifier.height(20.dp))
+    }.start()
+}
 
-        movie?.let {
-            Text("Title: ${it.title}")
-            Text("Director: ${it.director}")
-            Text("Year: ${it.year}")
-            Text("Genre: ${it.genre}")
+fun insertMovie(context: Context, movie: Movie?) {
+    if (movie != null) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val db = Room.databaseBuilder(
+                context.applicationContext,
+                MovieDatabase::class.java,
+                "movies_db"
+            ).build()
+
+            db.movieDao().insertMovie(movie)
+
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, "Movie saved to DB!", Toast.LENGTH_SHORT).show()
+            }
         }
+    } else {
+        Toast.makeText(context, "No movie to save!", Toast.LENGTH_SHORT).show()
+    }
+}
+@Composable
+fun DisplayMovieData(movie: Movie) {
+    Column {
+        Text(text = "Title: ${movie.title}")
+        Text(text = "Year: ${movie.year}")
+        Text(text = "Rated: ${movie.rated}")
+        Text(text = "Released: ${movie.released}")
+        Text(text = "Runtime: ${movie.runtime}")
+        Text(text = "Genre: ${movie.genre}")
+        Text(text = "Director: ${movie.director}")
+        Text(text = "Writer: ${movie.writer}")
+        Text(text = "Actors: ${movie.actors}")
+        Text(text = "Plot: ${movie.plot}")
+    }
 }
 
 
-data class Movie(
-    val title: String,
-    val director: String,
-    val year: String,
-    val genre: String
-)
-fun getValue(json: String, key: String): String {
-    val regex = """"$key"\s*:\s*"([^"]*)"""".toRegex()
-    return regex.find(json)?.groupValues?.get(1) ?: "N/A"
-}
+
+
+
+
+
+
 
