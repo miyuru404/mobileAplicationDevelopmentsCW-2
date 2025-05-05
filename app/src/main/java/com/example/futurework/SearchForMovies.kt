@@ -111,7 +111,8 @@ fun RetrieveMovie(movieTitle: String, context: Context, onMovieFetched: (Movie?)
         onClick = {
 
             coroutineScope.launch {
-                fetchMovieData(context, movieTitle) { onMovieFetched(it) }
+                val movie = fetchMovieData(movieTitle)
+                onMovieFetched(movie)
             }
         },
         colors = ButtonDefaults.buttonColors(
@@ -173,27 +174,22 @@ fun SaveMovie(movie: Movie?) {
 }
 
 
-fun fetchMovieData(context: Context, title: String, onResult: (Movie?) -> Unit) {
-    Thread {
+suspend fun fetchMovieData(title: String): Movie? {
+    return withContext(Dispatchers.IO) {
         try {
-
             val encodedTitle = URLEncoder.encode(title, "UTF-8")
             val apiKey = "c582a2b0"
             val url = URL("https://www.omdbapi.com/?t=$encodedTitle&apikey=$apiKey")
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
 
-            // Read the API response
             val result = connection.inputStream.bufferedReader().readText()
             connection.disconnect()
 
-            Log.d("MovieFetch", "API Response: $result")
-
             val json = JSONObject(result)
 
-            // Check the Response value from the API
             if (json.getString("Response") == "True") {
-                val movie = Movie(
+                Movie(
                     title = json.getString("Title"),
                     year = json.getString("Year"),
                     rated = json.getString("Rated"),
@@ -205,30 +201,16 @@ fun fetchMovieData(context: Context, title: String, onResult: (Movie?) -> Unit) 
                     actors = json.getString("Actors"),
                     plot = json.getString("Plot")
                 )
-
-                // Pass the movie data back to the UI thread
-                (context as Activity).runOnUiThread {
-                    onResult(movie)
-                }
             } else {
-                // If the API response is "False", show the error message
-                val errorMessage = json.getString("Error")
-                Log.e("MovieFetch", "API Error: $errorMessage")
-                (context as Activity).runOnUiThread {
-                    Toast.makeText(context, "Error: $errorMessage", Toast.LENGTH_SHORT).show()
-                }
+                null
             }
         } catch (e: Exception) {
-            e.printStackTrace()
-            Log.e("MovieFetch", "Exception: ${e.localizedMessage}") // Log the exception message
-
-            //  show a toast message
-            (context as Activity).runOnUiThread {
-                Toast.makeText(context, "Error: Unable to fetch movie data", Toast.LENGTH_SHORT).show()
-            }
+            Log.e("MovieFetch", "Error:")
+            null
         }
-    }.start()
+    }
 }
+
 
 
 fun insertMovie(context: Context, movie: Movie?) {
