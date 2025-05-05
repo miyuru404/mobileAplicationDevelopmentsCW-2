@@ -46,6 +46,8 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
+import androidx.compose.runtime.rememberCoroutineScope
+
 
 class SearchForMovies : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -76,6 +78,7 @@ fun SecondScreen() {
             RetrieveMovie(movieTitle, context) { retrievedMovie = it }
             Spacer(modifier = Modifier.height(10.dp))
             SaveMovie(retrievedMovie)
+            Spacer(modifier = Modifier.height(30.dp))
             if (retrievedMovie != null) {
                 DisplayMovieData(movie = retrievedMovie!!)
             }
@@ -102,26 +105,27 @@ fun TextBox(movieTitle: String, onTextChange: (String) -> Unit) {
 @Composable
 fun RetrieveMovie(movieTitle: String, context: Context, onMovieFetched: (Movie?) -> Unit) {
 
-
+    val coroutineScope = rememberCoroutineScope()
 
     Button(
         onClick = {
-            fetchMovieData(context, movieTitle) { onMovieFetched(it) }
 
+            coroutineScope.launch {
+                fetchMovieData(context, movieTitle) { onMovieFetched(it) }
+            }
         },
         colors = ButtonDefaults.buttonColors(
             containerColor = Color(0xFFB2BDE2),
             contentColor = Color.Black
         ),
         modifier = Modifier
-            .fillMaxWidth()              // makes the button take full horizontal space
-            .height(60.dp),              // makes the button taller
+            .fillMaxWidth() // makes the button take full horizontal space
+            .height(60.dp), // makes the button taller
         elevation = ButtonDefaults.buttonElevation(
-            defaultElevation = 20.dp,     // creates the shadow
-            pressedElevation = 12.dp     // deeper shadow when pressed
+            defaultElevation = 20.dp, // creates the shadow
+            pressedElevation = 12.dp // deeper shadow when pressed
         ),
         border = BorderStroke(1.dp, Color.Black)
-
     ) {
         Row(modifier = Modifier.fillMaxWidth()) {
             Text("Retrieve Movie")
@@ -131,11 +135,9 @@ fun RetrieveMovie(movieTitle: String, context: Context, onMovieFetched: (Movie?)
                 contentDescription = "retrieve"
             )
         }
-
     }
+
     Spacer(modifier = Modifier.height(20.dp))
-
-
 }
 
 @Composable
@@ -174,18 +176,22 @@ fun SaveMovie(movie: Movie?) {
 fun fetchMovieData(context: Context, title: String, onResult: (Movie?) -> Unit) {
     Thread {
         try {
-            val apiKey = "c582a2b0" //
-            //val url = URL("https://www.omdbapi.com/?t=${title}&apikey=$apiKey")
-            val encodedTitle = URLEncoder.encode(title, "UTF-8")
-            val url = URL("https://www.omdbapi.com/?t=$encodedTitle&apikey=$apiKey")
 
+            val encodedTitle = URLEncoder.encode(title, "UTF-8")
+            val apiKey = "c582a2b0"
+            val url = URL("https://www.omdbapi.com/?t=$encodedTitle&apikey=$apiKey")
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
 
+            // Read the API response
             val result = connection.inputStream.bufferedReader().readText()
             connection.disconnect()
 
+            Log.d("MovieFetch", "API Response: $result")
+
             val json = JSONObject(result)
+
+            // Check the Response value from the API
             if (json.getString("Response") == "True") {
                 val movie = Movie(
                     title = json.getString("Title"),
@@ -199,26 +205,31 @@ fun fetchMovieData(context: Context, title: String, onResult: (Movie?) -> Unit) 
                     actors = json.getString("Actors"),
                     plot = json.getString("Plot")
                 )
-                // On success, pass the movie data to the UI thread
+
+                // Pass the movie data back to the UI thread
                 (context as Activity).runOnUiThread {
                     onResult(movie)
-
                 }
             } else {
-                // On failure, show "No movies found" in Toast
+                // If the API response is "False", show the error message
+                val errorMessage = json.getString("Error")
+                Log.e("MovieFetch", "API Error: $errorMessage")
                 (context as Activity).runOnUiThread {
-                    Toast.makeText(context, "No movies found", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Error: $errorMessage", Toast.LENGTH_SHORT).show()
                 }
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            // In case of any error, show "No movies found" in Toast
+            Log.e("MovieFetch", "Exception: ${e.localizedMessage}") // Log the exception message
+
+            //  show a toast message
             (context as Activity).runOnUiThread {
-                Toast.makeText(context, "No movies found", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Error: Unable to fetch movie data", Toast.LENGTH_SHORT).show()
             }
         }
     }.start()
 }
+
 
 fun insertMovie(context: Context, movie: Movie?) {
     if (movie != null) {

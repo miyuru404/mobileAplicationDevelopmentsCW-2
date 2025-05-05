@@ -97,7 +97,7 @@ fun Search() {
     ) {
         Row(modifier = Modifier.fillMaxWidth()) {
             Text("Search")
-            Spacer(modifier = Modifier.weight(1f)) // Pushes icon to the end
+            Spacer(modifier = Modifier.weight(1f))
             Icon(
                 imageVector = Icons.Default.Search,
                 contentDescription = "Search"

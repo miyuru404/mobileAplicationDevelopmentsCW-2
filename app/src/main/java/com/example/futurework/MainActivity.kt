@@ -1,6 +1,7 @@
 package com.example.futurework
 
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -58,8 +59,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainScreen() {
     val configuration = LocalConfiguration.current
-    //val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
-    val isPortrait = configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
+    val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+   // val isPortrait = configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
 
     Box(
         modifier = Modifier
@@ -134,7 +135,6 @@ fun AddMoviesToTheDatabase() {
                     Log.d("MovieDB", "Inserted: ${it.title}")
                 }
 
-                // Optional: show confirmation in a toast
                 withContext(Dispatchers.Main) {
                     Toast.makeText(context, "Movies added to DB!", Toast.LENGTH_SHORT).show()
                 }
