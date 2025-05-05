@@ -2,6 +2,7 @@ package com.example.futurework
 
 import android.app.Activity
 import android.content.Context
+import android.content.res.Configuration
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -47,6 +49,8 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalConfiguration
 
 
 class SearchForMovies : ComponentActivity() {
@@ -62,32 +66,53 @@ class SearchForMovies : ComponentActivity() {
 
 @Composable
 fun SecondScreen() {
-    val context = LocalContext.current
-    var movieTitle by remember { mutableStateOf("") }
+
+    var movieTitle by rememberSaveable { mutableStateOf("") }
     var retrievedMovie by remember { mutableStateOf<Movie?>(null) }
+
+    val configuration = LocalConfiguration.current
+    val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFD9D9D9))
             .padding(16.dp)
-    ){
+    ) {
         Column {
+
             TextBox(movieTitle) { movieTitle = it }
+            Spacer(modifier = Modifier.height(10.dp))
 
-            Spacer(modifier = Modifier.height(10.dp))
-            RetrieveMovie(movieTitle, context) { retrievedMovie = it }
-            Spacer(modifier = Modifier.height(10.dp))
-            SaveMovie(retrievedMovie)
-            Spacer(modifier = Modifier.height(30.dp))
-            if (retrievedMovie != null) {
-                DisplayMovieData(movie = retrievedMovie!!)
+            if (isPortrait) {
+
+                RetrieveMovie(movieTitle) { retrievedMovie = it }
+                Spacer(modifier = Modifier.height(10.dp))
+                SaveMovie(retrievedMovie)
+                Spacer(modifier = Modifier.height(30.dp))
+                if (retrievedMovie != null) {
+                    DisplayMovieData(movie = retrievedMovie!!)
+                }
+            } else {
+
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        RetrieveMovie(movieTitle) { retrievedMovie = it }
+                        Spacer(modifier = Modifier.height(10.dp))
+                        SaveMovie(retrievedMovie)
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(2f)) {
+                        if (retrievedMovie != null) {
+                            DisplayMovieData(movie = retrievedMovie!!)
+                        }
+                    }
+                }
             }
-
-
         }
     }
-
 }
+
 
 @Composable
 fun TextBox(movieTitle: String, onTextChange: (String) -> Unit) {
@@ -95,7 +120,7 @@ fun TextBox(movieTitle: String, onTextChange: (String) -> Unit) {
     OutlinedTextField(
         value = movieTitle,
         onValueChange = onTextChange,
-        label = { Text("Enter your name") },
+        label = { Text("search for movies") },
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp)
@@ -103,7 +128,7 @@ fun TextBox(movieTitle: String, onTextChange: (String) -> Unit) {
 }
 
 @Composable
-fun RetrieveMovie(movieTitle: String, context: Context, onMovieFetched: (Movie?) -> Unit) {
+fun RetrieveMovie(movieTitle: String,  onMovieFetched: (Movie?) -> Unit) {
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -216,12 +241,7 @@ suspend fun fetchMovieData(title: String): Movie? {
 fun insertMovie(context: Context, movie: Movie?) {
     if (movie != null) {
         CoroutineScope(Dispatchers.IO).launch {
-            val db = Room.databaseBuilder(
-                context.applicationContext,
-                MovieDatabase::class.java,
-                "movies_db"
-            ).build()
-
+            val db = MovieDatabase.getInstance(context)
             db.movieDao().insertMovie(movie)
 
             withContext(Dispatchers.Main) {

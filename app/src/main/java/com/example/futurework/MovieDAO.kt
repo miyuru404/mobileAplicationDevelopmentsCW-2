@@ -11,8 +11,8 @@ interface MovieDAO {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMovie(movie: Movie)
 
-    @Query("SELECT * FROM movies WHERE LOWER(actors) LIKE '%' || LOWER(:actorName) || '%'")
-    suspend fun searchMoviesByActor(actorName: String): List<Movie>
+    @Query("SELECT * FROM movies WHERE LOWER(actors) LIKE '%' || LOWER(:query) || '%'")
+    suspend fun searchMoviesByActor(query: String): List<Movie>
 
     @Query("SELECT * FROM movies")
     suspend fun getAllMovies(): List<Movie>

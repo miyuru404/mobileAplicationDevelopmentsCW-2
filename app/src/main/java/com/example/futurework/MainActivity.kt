@@ -125,7 +125,7 @@ fun AddMoviesToTheDatabase() {
     Button(
         onClick = {
 
-            val db = Room.databaseBuilder(context, MovieDatabase::class.java, "movies_db").build()
+            val db = MovieDatabase.getInstance(context)
             val movieDao = db.movieDao()
             CoroutineScope(Dispatchers.IO).launch {
                 movieDao.insertAll(getHardcodedMovies())
