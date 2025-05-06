@@ -107,6 +107,8 @@ fun TextBox2(actorName: String, onTextChange: (String) -> Unit) {
     )
 }
 
+
+// this composable used for search actors based on user input from tha database
 @Composable
 fun SearchForAllActor(actorName: String, db: MovieDatabase, onResults: (List<Movie>) -> Unit) {
     val context = LocalContext.current
@@ -114,6 +116,7 @@ fun SearchForAllActor(actorName: String, db: MovieDatabase, onResults: (List<Mov
         onClick = {
             CoroutineScope(Dispatchers.Main).launch {
                 if (actorName.isBlank()) {
+                    // ask for actor name if input field is empty
                     Toast.makeText(context, "Please enter an actor name", Toast.LENGTH_SHORT).show()
                 } else {
                     val result = withContext(Dispatchers.IO) {
@@ -121,7 +124,7 @@ fun SearchForAllActor(actorName: String, db: MovieDatabase, onResults: (List<Mov
                     }
                     onResults(result)
                     println(result)
-
+                    //if no actor with provided name found in database
                     if (result.isEmpty()) {
                         Toast.makeText(context, "No actors found!", Toast.LENGTH_SHORT).show()
                     }

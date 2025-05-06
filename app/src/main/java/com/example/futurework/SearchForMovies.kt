@@ -70,7 +70,7 @@ class SearchForMovies : ComponentActivity() {
 
 @Composable
 fun SecondScreen() {
-
+    // Track search input and results
     var movieTitle by rememberSaveable { mutableStateOf("") }
     var retrievedMovie by rememberSaveable { mutableStateOf<List<Movie>>(emptyList()) }
     val configuration = LocalConfiguration.current
@@ -83,21 +83,18 @@ fun SecondScreen() {
             .padding(16.dp)
     ) {
         Column {
-
             TextBox(movieTitle) { movieTitle = it }
             Spacer(modifier = Modifier.height(10.dp))
 
             if (isPortrait) {
-
+                // Portrait layout - stack components vertically
                 RetrieveMovie(movieTitle,false) { retrievedMovie = it }
                 Spacer(modifier = Modifier.height(10.dp))
                 SaveMovie(retrievedMovie)
                 Spacer(modifier = Modifier.height(30.dp))
-                DisplayAllMovies( retrievedMovie)
-
-
+                DisplayAllMovies(retrievedMovie)
             } else {
-
+                // Landscape layout - side by side components
                 Row(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.weight(1f)) {
                         RetrieveMovie(movieTitle,false) { retrievedMovie = it }
@@ -106,7 +103,7 @@ fun SecondScreen() {
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(2f)) {
-                        DisplayAllMovies( retrievedMovie)
+                        DisplayAllMovies(retrievedMovie)
                     }
                 }
             }
@@ -114,12 +111,9 @@ fun SecondScreen() {
     }
 }
 
-/*
-
-*/
+// Text input field for movie searches
 @Composable
 fun TextBox(movieTitle: String, onTextChange: (String) -> Unit) {
-
     OutlinedTextField(
         value = movieTitle,
         onValueChange = onTextChange,
@@ -130,6 +124,9 @@ fun TextBox(movieTitle: String, onTextChange: (String) -> Unit) {
     )
 }
 
+// reusable Button to search for movies from API
+// this function can search for either one movie or multipart movies with similar name
+// making this function can used for both
 @Composable
 fun RetrieveMovie(movieTitle: String, allMovies:Boolean, onMovieFetched: (List<Movie>) -> Unit) {
     val coroutineScope = rememberCoroutineScope()
@@ -141,17 +138,20 @@ fun RetrieveMovie(movieTitle: String, allMovies:Boolean, onMovieFetched: (List<M
                     Toast.makeText(context, "Please enter a movie title", Toast.LENGTH_SHORT).show()
                 } else {
                     if (!allMovies) {
+                        // search for single movie
                         val movies = fetchMovieData(movieTitle)
                         onMovieFetched(movies)
+                        delay(10000) // Add delay to handle network delay
                         if (movies.isEmpty()) {
                             withContext(Dispatchers.Main) {
                                 Toast.makeText(context, "No movies found!", Toast.LENGTH_SHORT).show()
                             }
                         }
                     } else {
+                        // Search for all matching movies
                         val movies = fetchAllMovieData(movieTitle)
                         onMovieFetched(movies)
-                        delay(10000)//add delay to handel network delay
+                        delay(10000) // Add delay to handle network delay
                         if (movies.isEmpty()) {
                             withContext(Dispatchers.Main) {
                                 Toast.makeText(context, "No movies found!", Toast.LENGTH_SHORT).show()
@@ -160,7 +160,6 @@ fun RetrieveMovie(movieTitle: String, allMovies:Boolean, onMovieFetched: (List<M
                     }
                 }
             }
-
         },
         colors = ButtonDefaults.buttonColors(
             containerColor = Color(0xFFB2BDE2),
@@ -189,8 +188,7 @@ fun RetrieveMovie(movieTitle: String, allMovies:Boolean, onMovieFetched: (List<M
 }
 
 
-
-
+// Button to save movie results to local database
 @Composable
 fun SaveMovie(movieList: List<Movie>) {
     val context = LocalContext.current
@@ -200,6 +198,7 @@ fun SaveMovie(movieList: List<Movie>) {
             if (movieList.isEmpty()) {
                 Toast.makeText(context, "No movie to save!", Toast.LENGTH_SHORT).show()
             } else {
+                // Save movies in background thread
                 CoroutineScope(Dispatchers.IO).launch {
                     val db = MovieDatabase.getInstance(context)
                     movieList.forEach { db.movieDao().insertMovie(it) }
@@ -234,16 +233,19 @@ fun SaveMovie(movieList: List<Movie>) {
 }
 
 
-
+// Fetch movie data from OMDB API
+// this function will get one movie data that similar to user input
 suspend fun fetchMovieData(title: String): List<Movie> {
     return withContext(Dispatchers.IO) {
         try {
+            // Encode title and set up API request
             val encodedTitle = URLEncoder.encode(title, "UTF-8")
             val apiKey = "c582a2b0"
             val url = URL("https://www.omdbapi.com/?t=$encodedTitle&apikey=$apiKey")
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
 
+            // Read response and parse JSON
             val result = connection.inputStream.bufferedReader().readText()
             connection.disconnect()
 
@@ -274,34 +276,17 @@ suspend fun fetchMovieData(title: String): List<Movie> {
     }
 }
 
-
-
-
-fun insertMovie(context: Context, movie: Movie?) {
-    if (movie != null) {
-        CoroutineScope(Dispatchers.IO).launch {
-            val db = MovieDatabase.getInstance(context)
-            db.movieDao().insertMovie(movie)
-
-            withContext(Dispatchers.Main) {
-                Toast.makeText(context, "Movie saved to DB!", Toast.LENGTH_SHORT).show()
-            }
-        }
-    } else {
-        Toast.makeText(context, "No movie to save!", Toast.LENGTH_SHORT).show()
-    }
-}
+// Display movie details in a scrollable list
 @Composable
 fun DisplayAllMovies(movies: List<Movie>) {
-
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(rememberScrollState())//make it scrollable
             .padding(16.dp)
     ) {
         movies.forEach { movie ->
-            // Show movie details directly here
+            // Show movie details
             Text(text = "Title: ${movie.title}")
             Text(text = "Year: ${movie.year}")
             Text(text = "Rated: ${movie.rated}")
@@ -316,16 +301,3 @@ fun DisplayAllMovies(movies: List<Movie>) {
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
