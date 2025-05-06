@@ -3,11 +3,9 @@ package com.example.futurework
 import android.content.res.Configuration
 import android.os.Bundle
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,11 +16,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,12 +26,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.futurework.ui.theme.FutureWorkTheme
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.net.HttpURLConnection
@@ -114,6 +103,13 @@ fun TextBox3(movieName: String, onTextChange: (String) -> Unit) {
             .padding(16.dp)
     )
 }
+
+// Reference:
+// Portions of this code were adapted from Lecture 10: Network Connectivity and Background Tasks,
+// delivered by Dr. Dimitris C. Dracopoulos as part of the 5COSC023W - Mobile Application Development module.
+// The implementation of background tasks using WorkManager and network checks using ConnectivityManager
+// are based on examples and explanations provided in the lecture slides and accompanying code samples.
+// Original material © University of Westminster.
 
 
 //  Fetches all movies from the OMDB API based on user's search query.

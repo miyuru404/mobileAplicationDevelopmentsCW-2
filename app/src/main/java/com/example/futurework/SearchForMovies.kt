@@ -1,7 +1,6 @@
 package com.example.futurework
 
-import android.app.Activity
-import android.content.Context
+
 import android.content.res.Configuration
 import android.os.Bundle
 import android.util.Log
@@ -25,24 +24,19 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.room.Room
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -231,6 +225,13 @@ fun SaveMovie(movieList: List<Movie>) {
         }
     }
 }
+
+// Reference:
+// Portions of this code were adapted from Lecture 10: Network Connectivity and Background Tasks,
+// delivered by Dr. Dimitris C. Dracopoulos as part of the 5COSC023W - Mobile Application Development module.
+// The implementation of background tasks using WorkManager and network checks using ConnectivityManager
+// are based on examples and explanations provided in the lecture slides and accompanying code samples.
+// Original material © University of Westminster.
 
 
 // Fetch movie data from OMDB API
