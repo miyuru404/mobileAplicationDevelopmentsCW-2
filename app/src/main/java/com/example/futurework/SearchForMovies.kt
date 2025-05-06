@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -31,6 +33,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,6 +54,7 @@ import java.net.URLEncoder
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalConfiguration
+import kotlinx.coroutines.delay
 
 
 class SearchForMovies : ComponentActivity() {
@@ -68,9 +72,7 @@ class SearchForMovies : ComponentActivity() {
 fun SecondScreen() {
 
     var movieTitle by rememberSaveable { mutableStateOf("") }
-    //var retrievedMovie by remember { mutableStateOf<Movie?>(null) }
     var retrievedMovie by rememberSaveable { mutableStateOf<List<Movie>>(emptyList()) }
-
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 
@@ -87,26 +89,24 @@ fun SecondScreen() {
 
             if (isPortrait) {
 
-                RetrieveMovie(movieTitle) { retrievedMovie = it }
+                RetrieveMovie(movieTitle,false) { retrievedMovie = it }
                 Spacer(modifier = Modifier.height(10.dp))
                 SaveMovie(retrievedMovie)
                 Spacer(modifier = Modifier.height(30.dp))
-                if (retrievedMovie != null) {
-                    DisplayMovieData(movie = retrievedMovie!!)
-                }
+                DisplayAllMovies( retrievedMovie)
+
+
             } else {
 
                 Row(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.weight(1f)) {
-                        RetrieveMovie(movieTitle) { retrievedMovie = it }
+                        RetrieveMovie(movieTitle,false) { retrievedMovie = it }
                         Spacer(modifier = Modifier.height(10.dp))
                         SaveMovie(retrievedMovie)
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(2f)) {
-                        if (retrievedMovie != null) {
-                            DisplayMovieData(movie = retrievedMovie!!)
-                        }
+                        DisplayAllMovies( retrievedMovie)
                     }
                 }
             }
@@ -114,7 +114,9 @@ fun SecondScreen() {
     }
 }
 
+/*
 
+*/
 @Composable
 fun TextBox(movieTitle: String, onTextChange: (String) -> Unit) {
 
@@ -129,15 +131,36 @@ fun TextBox(movieTitle: String, onTextChange: (String) -> Unit) {
 }
 
 @Composable
-fun RetrieveMovie(movieTitle: String, onMovieFetched: (List<Movie>) -> Unit) {
+fun RetrieveMovie(movieTitle: String, allMovies:Boolean, onMovieFetched: (List<Movie>) -> Unit) {
     val coroutineScope = rememberCoroutineScope()
-
+    val context = LocalContext.current
     Button(
         onClick = {
             coroutineScope.launch {
-                val movies = fetchMovieData(movieTitle)
-                onMovieFetched(movies)
+                if (movieTitle.isBlank()) {
+                    Toast.makeText(context, "Please enter a movie title", Toast.LENGTH_SHORT).show()
+                } else {
+                    if (!allMovies) {
+                        val movies = fetchMovieData(movieTitle)
+                        onMovieFetched(movies)
+                        if (movies.isEmpty()) {
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(context, "No movies found!", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    } else {
+                        val movies = fetchAllMovieData(movieTitle)
+                        onMovieFetched(movies)
+                        delay(10000)//add delay to handel network delay
+                        if (movies.isEmpty()) {
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(context, "No movies found!", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                }
             }
+
         },
         colors = ButtonDefaults.buttonColors(
             containerColor = Color(0xFFB2BDE2),
@@ -269,23 +292,32 @@ fun insertMovie(context: Context, movie: Movie?) {
     }
 }
 @Composable
-fun DisplayMovieData(movie: List<Movie>) {
-    Column {
-        movie.forEach {
-            Text(text = "Title: ${it.title}")
-            Text(text = "Year: ${it.year}")
-            Text(text = "Rated: ${it.rated}")
-            Text(text = "Released: ${it.released}")
-            Text(text = "Runtime: ${it.runtime}")
-            Text(text = "Genre: ${it.genre}")
-            Text(text = "Director: ${it.director}")
-            Text(text = "Writer: ${it.writer}")
-            Text(text = "Actors: ${it.actors}")
-            Text(text = "Plot: ${it.plot}")
-            Spacer(modifier = Modifier.height(16.dp)) // Space between movies
+fun DisplayAllMovies(movies: List<Movie>) {
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp)
+    ) {
+        movies.forEach { movie ->
+            // Show movie details directly here
+            Text(text = "Title: ${movie.title}")
+            Text(text = "Year: ${movie.year}")
+            Text(text = "Rated: ${movie.rated}")
+            Text(text = "Released: ${movie.released}")
+            Text(text = "Runtime: ${movie.runtime}")
+            Text(text = "Genre: ${movie.genre}")
+            Text(text = "Director: ${movie.director}")
+            Text(text = "Writer: ${movie.writer}")
+            Text(text = "Actors: ${movie.actors}")
+            Text(text = "Plot: ${movie.plot}")
+            Spacer(modifier = Modifier.height(10.dp))
         }
     }
 }
+
+
 
 
 

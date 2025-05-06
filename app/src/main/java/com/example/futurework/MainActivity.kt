@@ -28,7 +28,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -38,7 +37,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
-import androidx.room.Room
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -88,6 +86,7 @@ fun MainScreen() {
                 AddMoviesToTheDatabase()
                 CustomButton("Search for Movies", SearchForMovies::class.java)
                 CustomButton("Search for Actors", SearchForActor::class.java)
+                CustomButton("Search for all movies", SerchForAllMovies::class.java)
 
                 Spacer(modifier = Modifier.height(100.dp))
             }
@@ -114,6 +113,7 @@ fun MainScreen() {
                     AddMoviesToTheDatabase()
                     CustomButton("Search for Movies", SearchForMovies::class.java)
                     CustomButton("Search for Actors", SearchForActor::class.java)
+                    CustomButton("Search for all movies", SerchForAllMovies::class.java)
                 }
             }
         }

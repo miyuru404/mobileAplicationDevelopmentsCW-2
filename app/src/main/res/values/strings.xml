@@ -2,4 +2,5 @@
     <string name="app_name">futureWork</string>
     <string name="title_activity_search_for_movies">SearchForMovies</string>
     <string name="title_activity_search_for_actor">SearchForActor</string>
+    <string name="title_activity_serch_for_all_movies">SerchForAllMovies</string>
 </resources>
