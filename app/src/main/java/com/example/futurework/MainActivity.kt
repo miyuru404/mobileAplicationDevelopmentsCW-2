@@ -48,17 +48,16 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-             MainScreen()
-
+            MainScreen()
         }
     }
 }
 
 @Composable
 fun MainScreen() {
+    // Check if device is in portrait mode
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
-   // val isPortrait = configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
 
     Box(
         modifier = Modifier
@@ -109,7 +108,6 @@ fun MainScreen() {
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-
                     AddMoviesToTheDatabase()
                     CustomButton("Search for Movies", SearchForMovies::class.java)
                     CustomButton("Search for Actors", SearchForActor::class.java)
@@ -119,44 +117,43 @@ fun MainScreen() {
         }
     }
 }
+
 @Composable
 fun AddMoviesToTheDatabase() {
     val context = LocalContext.current
     Button(
         onClick = {
-
+            // Get database instance and add movies in background thread
             val db = MovieDatabase.getInstance(context)
             val movieDao = db.movieDao()
             CoroutineScope(Dispatchers.IO).launch {
                 movieDao.insertAll(getHardcodedMovies())
-                // Retrieve and log the inserted movies
+                // Log inserted movies for debugging after used this button in log cat all the movies that save
+                // to the database will print
                 val insertedMovies = movieDao.getAllMovies()
                 insertedMovies.forEach {
                     Log.d("MovieDB", "Inserted: ${it.title}")
                 }
 
+                // Switch to main thread for toast
                 withContext(Dispatchers.Main) {
                     Toast.makeText(context, "Movies added to DB!", Toast.LENGTH_SHORT).show()
                 }
-
-
             }
-
         },
         colors = ButtonDefaults.buttonColors(
             containerColor = Color(0xFFB2BDE2),
             contentColor = Color.Black
         ),
         modifier = Modifier
-            .fillMaxWidth()              // makes the button take full horizontal space
-            .height(60.dp),              // makes the button taller
+            .fillMaxWidth()
+            .height(60.dp),
         elevation = ButtonDefaults.buttonElevation(
-            defaultElevation = 20.dp,     // creates the shadow
-            pressedElevation = 12.dp     // deeper shadow when pressed
+            defaultElevation = 20.dp,
+            pressedElevation = 12.dp
         ),
         border = BorderStroke(1.dp, Color.Black)
     ) {
-
         Row(modifier = Modifier.fillMaxWidth()) {
             Text("Save movie to Database")
             Spacer(modifier = Modifier.weight(1f))
@@ -168,41 +165,50 @@ fun AddMoviesToTheDatabase() {
     }
 }
 
-
-
+// Reusable button composable that navigates to another activity
+// Takes a display text and the target activity class to launch
 @Composable
 fun CustomButton(buttonText: String, targetActivity: Class<*>) {
-    val  context = LocalContext.current
+
+    val context = LocalContext.current
     Button(
-        onClick = { val intent = Intent(context, targetActivity)
-                    context.startActivity(intent) },
+
+        onClick = {
+            val intent = Intent(context, targetActivity)
+            context.startActivity(intent)
+        },
+
         colors = ButtonDefaults.buttonColors(
             containerColor = Color(0xFFB2BDE2),
             contentColor = Color.Black
         ),
+
         modifier = Modifier
-            .fillMaxWidth()              // makes the button take full horizontal space
-            .height(60.dp),              // makes the button taller
+            .fillMaxWidth()
+            .height(60.dp),
+        // Add shadow effect to button
         elevation = ButtonDefaults.buttonElevation(
-            defaultElevation = 20.dp,     // creates the shadow
-            pressedElevation = 12.dp     // deeper shadow when pressed
+            defaultElevation = 20.dp,     // normal state shadow
+            pressedElevation = 12.dp      // pressed  shadow
         ),
+        // Add thin black border around button
         border = BorderStroke(1.dp, Color.Black)
-
     ) {
-
+        // text on left and icon on right
         Row(modifier = Modifier.fillMaxWidth()) {
-            Text( buttonText)
+            Text(buttonText)
+            // Push icon to right side
             Spacer(modifier = Modifier.weight(1f))
+            // Add search icon
             Icon(
                 imageVector = Icons.Default.Search,
                 contentDescription = "Search"
             )
         }
-
     }
 }
 
+// Returns sample movies for the database
 fun getHardcodedMovies(): List<Movie> {
     return listOf(
         Movie(
@@ -267,7 +273,3 @@ fun getHardcodedMovies(): List<Movie> {
         )
     )
 }
-
-
-
-
